@@ -9,5 +9,7 @@ namespace TesteTecnicoImobiliaria.Modelo.Interfaces.Regra
         List<ClienteViewModel> ListarClientes();
         void DesativarCliente(int id);
         void AtivarCliente(int id);
+        bool VerificarSeCnpjEValido(string cnpj);
+        bool VerificarSeCpfEValido(string cpf);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using TesteTecnicoImobiliaria.Modelo.Interfaces.Regra;
 using TesteTecnicoImobiliaria.Modelo.ViewModels;
 
@@ -9,10 +10,12 @@ namespace TesteTecnicoImobiliaria.API.Controllers
     public class ClienteController : ControllerBase
     {
         private readonly IRnCliente rnCliente;
+        private readonly IRnImovel rnImovel;
 
-        public ClienteController(IRnCliente rnCliente)
+        public ClienteController(IRnCliente rnCliente, IRnImovel rnImovel)
         {
             this.rnCliente = rnCliente;
+            this.rnImovel = rnImovel;
         }
 
         // GET: api/<ClienteController>
@@ -33,7 +36,12 @@ namespace TesteTecnicoImobiliaria.API.Controllers
         [HttpPost]
         public void Post([FromBody] ClienteViewModel cliente)
         {
-            rnCliente.SalvarCliente(cliente);
+            var cnpjValido = !cliente.CNPJ.IsNullOrEmpty() ? rnCliente.VerificarSeCnpjEValido(cliente.CNPJ) : false;
+            var cpfValido = !cliente.CPF.IsNullOrEmpty() ? rnCliente.VerificarSeCpfEValido(cliente.CPF) : false;
+
+            if(cnpjValido || cpfValido)
+                rnCliente.SalvarCliente(cliente);
+            
         }
 
         // POST api/<ClienteController>/Ativar/5
@@ -49,6 +57,16 @@ namespace TesteTecnicoImobiliaria.API.Controllers
         [Route("Desativar/{id}")]
         public void DesativarCliente(int id)
         {
+            var cliente = rnCliente.SelecionarCliente(id);
+            if(cliente != null)
+            {
+                var imoveis = rnImovel.ListarImoveis();
+                if(imoveis.Any(x => x.IdCliente == id))
+                {
+                    throw new Exception("Não é possível desativar um cliente que possui imóveis cadastrados.");
+                }
+            }
+            
             rnCliente.DesativarCliente(id);
         }
     }
